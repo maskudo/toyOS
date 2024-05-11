@@ -1,4 +1,6 @@
 use core::fmt;
+use lazy_static::lazy_static;
+use spin::Mutex;
 
 // VGA render a superset of ASCII called Code Page 37
 // https://en.wikipedia.org/wiki/Code_page_437
@@ -125,16 +127,12 @@ impl fmt::Write for Writer {
     }
 }
 
-pub fn print_something() {
-    use core::fmt::Write;
-    let mut writer = Writer {
+lazy_static! {
+    // wrap the global writer in a mutex since we cannot safely modify it otherwise
+    // we use a busy waiting spin lock which doesnt require an os support
+    pub static ref WRITER: Mutex<Writer> = Mutex::new(Writer {
         column_position: 0,
         color_code: ColorCode::new(Color::Green, Color::Black),
-        // the vga buffer is located at 0xb8000
         buffer: unsafe { &mut *(0xb8000 as *mut Buffer) },
-    };
-    writer.write_byte(b'H');
-    writer.write_string("ello ");
-    writer.write_string("Wörld!");
-    write!(writer, "The numbers are {} and {}", 42, 1.0 / 3.0).unwrap();
+    });
 }
