@@ -111,7 +111,7 @@ impl Writer {
         for byte in s.bytes() {
             match byte {
                 // printable ascii byte or newline
-                0x20..=0x7e => self.write_byte(byte),
+                0x20..=0x7e | b'\n' => self.write_byte(byte),
                 // not part of printable ascii as rust supports utf8 which might contain non ascii
                 // character. for these we write ■ character which has a hex code of 0xfe
                 _ => self.write_byte(0xfe),
@@ -135,4 +135,21 @@ lazy_static! {
         color_code: ColorCode::new(Color::Green, Color::Black),
         buffer: unsafe { &mut *(0xb8000 as *mut Buffer) },
     });
+}
+
+#[macro_export]
+macro_rules! print {
+    ($($arg:tt)*) => ($crate::vga_buffer::_print(format_args!($($arg)*)));
+}
+
+#[macro_export]
+macro_rules! println {
+    () => ($crate::print!("\n"));
+    ($($arg:tt)*) => ($crate::print!("{}\n", format_args!($($arg)*)));
+}
+
+#[doc(hidden)]
+pub fn _print(args: fmt::Arguments) {
+    use core::fmt::Write;
+    WRITER.lock().write_fmt(args).unwrap();
 }
