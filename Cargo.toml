@@ -3,6 +3,11 @@ name = "toyos"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "toyos"
+test = false
+bench = false
+
 [profile.dev]
 panic = "abort"
 
