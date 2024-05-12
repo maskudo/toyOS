@@ -40,27 +40,27 @@ impl ColorCode {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 // lay out the struct with the same layout an equivalent C struct
 #[repr(C)]
-struct ScreenChar {
-    ascii_character: u8,
+pub struct ScreenChar {
+    pub ascii_character: u8,
     color_code: ColorCode,
 }
 
-const BUFFER_HEIGHT: usize = 25;
-const BUFFER_WIDTH: usize = 80;
+pub const BUFFER_HEIGHT: usize = 25;
+pub const BUFFER_WIDTH: usize = 80;
 
 #[repr(transparent)]
 // a 25*80 sized buffer of characters
-struct Buffer {
+pub struct Buffer {
     // compiler may optimize away the write action thinking it isnt necessary
     // as we only write to the buffer and never read from it.
     // to avoid this, we declare the buffer as volatile
-    chars: [[volatile::Volatile<ScreenChar>; BUFFER_WIDTH]; BUFFER_HEIGHT],
+    pub chars: [[volatile::Volatile<ScreenChar>; BUFFER_WIDTH]; BUFFER_HEIGHT],
 }
 
 pub struct Writer {
     column_position: usize,
     color_code: ColorCode,
-    buffer: &'static mut Buffer,
+    pub buffer: &'static mut Buffer,
 }
 
 impl Writer {
