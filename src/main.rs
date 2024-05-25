@@ -58,6 +58,11 @@ fn test_println_output() {
 pub extern "C" fn _start() -> ! {
     println!("hello wolr{}", "d");
 
+    toyos::init();
+
+    //breakpoint exception
+    x86_64::instructions::interrupts::int3();
+
     #[cfg(test)]
     test_main();
 
