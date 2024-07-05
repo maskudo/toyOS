@@ -6,17 +6,14 @@
 #![test_runner(toyos::test_runner)]
 
 use core::panic::PanicInfo;
-use toyos::{
-    println,
-    vga_buffer::{BUFFER_HEIGHT, WRITER},
-};
+use toyos::{hlt_loop, println};
 
 // function called on panic
 #[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     println!("{}", info);
-    loop {}
+    hlt_loop()
 }
 
 #[cfg(test)]
@@ -30,44 +27,15 @@ fn trivial_assertion() {
     assert_eq!(1, 1);
 }
 
-#[test_case]
-fn test_println_simple() {
-    println!("test println simple output");
-}
-
-#[test_case]
-fn test_println_many() {
-    for _ in 0..200 {
-        println!("test println many outputs");
-    }
-}
-
-#[test_case]
-fn test_println_output() {
-    let s = "Some test string that fits on a single line";
-    println!("{}", s);
-    for (i, c) in s.chars().enumerate() {
-        // since println puts a newline after the string, the string is present in the
-        // BUFFER_HEIGHT - 2th line
-        let screen_char = WRITER.lock().buffer.chars[BUFFER_HEIGHT - 2][i].read();
-        assert_eq!(char::from(screen_char.ascii_character), c);
-    }
-}
-
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
     println!("hello wolr{}", "d");
 
     toyos::init();
 
-    // trigger a page fault
-    unsafe {
-        *(0xdeadbeef as *mut u8) = 42;
-    };
-
     #[cfg(test)]
     test_main();
     println!("didnt crash");
 
-    loop {}
+    hlt_loop();
 }
