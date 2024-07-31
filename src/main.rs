@@ -5,8 +5,17 @@
 #![feature(custom_test_frameworks)]
 #![test_runner(toyos::test_runner)]
 
+use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
-use toyos::{hlt_loop, println};
+use toyos::{
+    hlt_loop,
+    memory::{self},
+    println,
+};
+use x86_64::{
+    structures::paging::{Page, Translate},
+    VirtAddr,
+};
 
 // function called on panic
 #[cfg(not(test))]
@@ -27,18 +36,26 @@ fn trivial_assertion() {
     assert_eq!(1, 1);
 }
 
-#[no_mangle]
-pub extern "C" fn _start() -> ! {
-    println!("hello wolr{}", "d");
+entry_point!(kernel_main);
 
+// entry point that is called by the bootloader. aka _start
+fn kernel_main(boot_info: &'static BootInfo) -> ! {
     toyos::init();
-    use x86_64::registers::control::Cr3;
-    let (level_4_page_table, _) = Cr3::read();
-    println!("Level 4 page table at: {:?}", level_4_page_table);
+    let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
+    let mut mapper = unsafe { memory::init(phys_mem_offset) };
+    let mut frame_allocator =
+        unsafe { memory::BootInfoFrameAllocator::init(&boot_info.memory_map) };
+
+    // we know that there is level 1 page for address 0
+    // as bootloader uses the first 1 megabyte of memory to init
+    let page = Page::containing_address(VirtAddr::new(0));
+    memory::create_example_mapping(page, &mut mapper, &mut frame_allocator);
+
+    let page_ptr: *mut u64 = page.start_address().as_mut_ptr();
+    unsafe { page_ptr.offset(400).write_volatile(0x_f021_f077_f065_f04e) };
 
     #[cfg(test)]
     test_main();
-    println!("didnt crash");
 
     hlt_loop();
 }
