@@ -32,6 +32,9 @@ pub extern "C" fn _start() -> ! {
     println!("hello wolr{}", "d");
 
     toyos::init();
+    use x86_64::registers::control::Cr3;
+    let (level_4_page_table, _) = Cr3::read();
+    println!("Level 4 page table at: {:?}", level_4_page_table);
 
     #[cfg(test)]
     test_main();
