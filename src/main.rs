@@ -5,13 +5,12 @@
 #![feature(custom_test_frameworks)]
 #![test_runner(toyos::test_runner)]
 
+extern crate alloc;
+
+use alloc::{boxed::Box, vec::Vec};
 use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
-use toyos::{
-    hlt_loop,
-    memory::{self},
-    println,
-};
+use toyos::{allocator, hlt_loop, memory, println};
 use x86_64::{
     structures::paging::{Page, Translate},
     VirtAddr,
@@ -46,16 +45,19 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     let mut frame_allocator =
         unsafe { memory::BootInfoFrameAllocator::init(&boot_info.memory_map) };
 
-    // we know that there is level 1 page for address 0
-    // as bootloader uses the first 1 megabyte of memory to init
-    let page = Page::containing_address(VirtAddr::new(0));
-    memory::create_example_mapping(page, &mut mapper, &mut frame_allocator);
+    allocator::init_heap(&mut mapper, &mut frame_allocator).expect("Heap initialization failed");
 
-    let page_ptr: *mut u64 = page.start_address().as_mut_ptr();
-    unsafe { page_ptr.offset(400).write_volatile(0x_f021_f077_f065_f04e) };
+    println!("allocating");
+    let _ = Box::new(41);
+    let mut v = Vec::new();
+    for i in 1..500 {
+        v.push(i);
+    }
+
+    println!("vec at {:p}", v.as_slice());
 
     #[cfg(test)]
     test_main();
-
+    println!("It did not crash");
     hlt_loop();
 }

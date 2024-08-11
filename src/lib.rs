@@ -5,10 +5,13 @@
 #![test_runner(crate::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 
+extern crate alloc;
+
 use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
 use x86_64;
 
+pub mod allocator;
 pub mod gdt;
 pub mod interrupts;
 pub mod memory;
